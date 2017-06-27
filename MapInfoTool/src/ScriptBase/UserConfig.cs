@@ -14,6 +14,7 @@ namespace MapInfoTool.ScriptBase
             ShowObjects = IniHelper.GetConfigSetting("General", "ShowObjects", true);
             ShowBuildings = IniHelper.GetConfigSetting("General", "ShowBuildings", true);
             ShowNearbyList = IniHelper.GetConfigSetting("General", "ShowNearbyList", true);
+            ShowLODs = IniHelper.GetConfigSetting("General", "ShowLODs", true);
             DrawAllObjects = IniHelper.GetConfigSetting("General", "DrawAllObjects", true);
             ObjectSearchRadius = IniHelper.GetConfigSetting("General", "ObjectSearchRadius", 10.0f);
             BuildingSearchRadius = IniHelper.GetConfigSetting("General", "BuildingSearchRadius", 10.0f);
@@ -22,6 +23,7 @@ namespace MapInfoTool.ScriptBase
             ObjectColour = IniHelper.GetConfigSetting("General", "ObjectColour", Color.DarkGoldenrod);
             BuildingColour = IniHelper.GetConfigSetting("General", "BuildingColour", Color.DarkRed);
             ActivationKey = IniHelper.GetConfigSetting("KeyBinds", "Activate", Keys.Y);
+            StartOnPlayer = IniHelper.GetConfigSetting("General", "StartOnPlayer", false);
         }
 
         /// <summary>
@@ -38,6 +40,11 @@ namespace MapInfoTool.ScriptBase
         /// Whether to show the list of nearby objects (default= true)
         /// </summary>
         public static bool ShowNearbyList { get; private set; }
+
+        /// <summary>
+        /// Whether to show the list of nearby objects (default= true)
+        /// </summary>
+        public static bool ShowLODs { get; private set; }
 
         /// <summary>
         /// Whether to draw information about all on-screen objects or just the one in-front of the camera.
@@ -78,5 +85,10 @@ namespace MapInfoTool.ScriptBase
         /// Activation key.
         /// </summary>
         public static Keys ActivationKey { get; private set; }
+
+        /// <summary>
+        /// Whether the camera should start at the players position when enabled.
+        /// </summary>
+        public static bool StartOnPlayer { get; private set; }
     }
 }

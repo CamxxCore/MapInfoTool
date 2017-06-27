@@ -1,6 +1,6 @@
 ﻿using System;
 using GTA.Math;
-using MapInfoTool.Math;
+using MapInfoTool.MathStuff;
 using MapInfoTool.Memory;
 
 namespace MapInfoTool.ScriptBase.Entity_Info
@@ -24,9 +24,9 @@ namespace MapInfoTool.ScriptBase.Entity_Info
             }
         }
 
-        public override Vector3 Rotation => MathHelper.ToEuler(_building.Matrix);
-
         public override Matrix Matrix => _building.Matrix;
+
+        public override Vector3 Rotation => Matrix.ToEuler();
 
         public sealed override IntPtr MemoryAddress => _building.Address;
 

@@ -1,7 +1,7 @@
 ﻿using System;
 using GTA;
 using GTA.Math;
-using MapInfoTool.Math;
+using MapInfoTool.MathStuff;
 
 namespace MapInfoTool.Interfaces
 {

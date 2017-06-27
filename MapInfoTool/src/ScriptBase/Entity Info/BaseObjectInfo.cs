@@ -2,7 +2,7 @@
 using GTA;
 using GTA.Math;
 using MapInfoTool.Interfaces;
-using MapInfoTool.Math;
+using MapInfoTool.MathStuff;
 
 namespace MapInfoTool.ScriptBase.Entity_Info
 {
@@ -46,6 +46,8 @@ namespace MapInfoTool.ScriptBase.Entity_Info
         /// </summary>
         public Model Model => new Model(ModelName);
 
+        public Vector3 DrawOffset { get; set; }
+
         /// <summary>
         /// The world-relative midpoint of the entity model.
         /// </summary>
@@ -84,7 +86,7 @@ namespace MapInfoTool.ScriptBase.Entity_Info
             get
             {
                 var screenPos = UI.WorldToScreen(MidPoint);
-                return (screenPos.X != 0 && screenPos.Y != 0);
+                return screenPos.X != 0 && screenPos.Y != 0;
             }
         }
 
@@ -103,7 +105,7 @@ namespace MapInfoTool.ScriptBase.Entity_Info
         /// <param name="stackedIdx"></param>
         public virtual void Draw(float distance, int stackedIdx)
         {
-            UiLabel.DrawAtPosition(MidPoint, distance, stackedIdx);
+            UiLabel.DrawAtPosition(MidPoint + DrawOffset, distance, stackedIdx);
         }
 
         /// <summary>

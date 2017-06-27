@@ -1,6 +1,6 @@
 ﻿using GTA.Math;
 
-namespace MapInfoTool.Math
+namespace MapInfoTool.MathStuff
 {
     public class BoundingBox
     {

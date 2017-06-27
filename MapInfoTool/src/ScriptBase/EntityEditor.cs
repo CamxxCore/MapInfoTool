@@ -2,7 +2,7 @@
 using GTA.Math;
 using GTA.Native;
 using MapInfoTool.Interfaces;
-using MapInfoTool.Math;
+using MapInfoTool.MathStuff;
 using MapInfoTool.ScriptBase.Entity_Info;
 
 namespace MapInfoTool.ScriptBase

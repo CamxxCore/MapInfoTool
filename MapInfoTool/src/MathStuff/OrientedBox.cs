@@ -1,7 +1,7 @@
 ﻿using System;
 using GTA.Math;
 
-namespace MapInfoTool.Math
+namespace MapInfoTool.MathStuff
 {
     /// <summary>
     /// Bounding volume using an oriented bounding box.

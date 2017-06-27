@@ -1,5 +1,7 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using System.Runtime.InteropServices;
+using System.Windows.Forms;
 using System.Windows.Input;
 
 namespace MapInfoTool
@@ -29,46 +31,57 @@ namespace MapInfoTool
             uint wFlags);
 
         [DllImport("user32.dll")]
+        static extern int ToUnicodeEx(
+            uint wVirtKey,
+            uint wScanCode,
+            byte[] lpKeyState,
+            [Out, MarshalAs(UnmanagedType.LPWStr, SizeParamIndex = 4)]
+            StringBuilder pwszBuff,
+            int cchBuff,
+            uint wFlags,
+            IntPtr dwhkl);
+
+        [DllImport("user32.dll")]
         public static extern bool GetKeyboardState(byte[] lpKeyState);
+
+        [DllImport("user32.dll")]
+        static extern IntPtr GetKeyboardLayout(uint idThread);
 
         [DllImport("user32.dll")]
         public static extern uint MapVirtualKey(uint uCode, MapType uMapType);
 
-        public static char GetCharFromKey(Key key, bool shift)
-        {
-            char ch = ' ';
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern int ToAscii(
+            uint uVirtKey,
+            uint uScanCode,
+            byte[] lpKeyState,
+            out uint lpChar,
+            uint flags
+        );
 
-            int virtualKey = System.Windows.Input.KeyInterop.VirtualKeyFromKey(key);
+        [DllImport("user32.dll")]
+        static extern short VkKeyScan(char c);
+
+        public static char GetCharFromKey(Keys key, bool shift)
+        {
             byte[] keyboardState = new byte[256];
 
             if (shift)
-                keyboardState[0x10] = 0x80;
-            GetKeyboardState(keyboardState);
+                keyboardState[(int)Keys.ShiftKey] = 0xff;
 
-            uint scanCode = MapVirtualKey((uint)virtualKey, MapType.MAPVK_VK_TO_VSC);
+            //  GetKeyboardState(keyboardState);
+
+            uint virtualKey = (uint)key;
+
+         //   uint scanCode = MapVirtualKey(virtualKey, MapType.MAPVK_VK_TO_VSC);
+
+            IntPtr inputLocaleIdentifier = GetKeyboardLayout(0);
+
             StringBuilder stringBuilder = new StringBuilder(2);
 
-            int result = ToUnicode((uint)virtualKey, scanCode, keyboardState, stringBuilder, stringBuilder.Capacity, 0);
-            switch (result)
-            {
-                case -1:
-                    break;
-                case 0:
-                    break;
-                case 1:
-                    {
-                        ch = stringBuilder[0];
-                        break;
-                    }
-                default:
-                    {
-                        ch = stringBuilder[0];
-                        break;
-                    }
-            }
-            return ch;
+            ToUnicodeEx(virtualKey, 0, keyboardState, stringBuilder, 5, 0u, inputLocaleIdentifier);
+
+            return stringBuilder[0];
         }
     }
 }
-
-

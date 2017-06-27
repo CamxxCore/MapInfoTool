@@ -3,21 +3,19 @@ using GTA;
 using GTA.Math;
 using GTA.Native;
 using MapInfoTool.Interfaces;
-using MapInfoTool.Math;
+using MapInfoTool.MathStuff;
 
 namespace MapInfoTool.Helpers
 {
     public class FreeCamera : IUpdatable, IDisposable
     {
-        public bool IsActive { get; private set; }
-
-        public bool DisableControl { get; set; }
+        public bool DisableControls { get; set; }
 
         private const float LerpTime = 0.8f;
 
         private const float RotationSpeed = 1.54f;
 
-        private readonly Camera _mainCamera;
+        private Camera _mainCamera;
 
         public Vector3 Position => _mainCamera.Position;
 
@@ -25,34 +23,29 @@ namespace MapInfoTool.Helpers
 
         public Vector3 Direction => MathHelper.RotationToDirection(_mainCamera.Rotation);
 
+        public bool IsActive => World.RenderingCamera == _mainCamera;
+
         public readonly InputHandler InputHandler;
 
         private float _currentLerpTime;
 
-        private Vector3 _previousPos;
-
-        private Vector3 _desiredPos;
+        private Vector3 _previousPos, _desiredPos;
 
         private Vector3 _lastFocus;
 
         private float _moveScale = 1.0f;
 
-        public FreeCamera(Vector3 position, Vector3 rotation)
+        public FreeCamera()
         {
             InputHandler = new InputHandler();
             InputHandler.LeftStickChanged += LeftStickChanged;
             InputHandler.RightStickChanged += RightStickChanged;
             InputHandler.LeftStickPressed += LeftStickPressed;
-            _mainCamera = World.CreateCamera(position, rotation, 50f);
-            _previousPos = position;
         }
-
-        public FreeCamera() : this(Vector3.Zero, Vector3.Zero)
-        { }  
 
         private void LeftStickChanged(object sender, AnalogStickChangedEventArgs e)
         {
-            if (_mainCamera.IsInterpolating || !IsActive || DisableControl) return;
+            if (!IsActive || DisableControls || _mainCamera.IsInterpolating) return;
 
             if (e.X > sbyte.MaxValue)
                 _previousPos -= Direction.RightVector(new Vector3(0, 0, 1f)) * (Function.Call<float>(Hash.GET_CONTROL_NORMAL, 2, 218) * -3f) * _moveScale;
@@ -69,14 +62,9 @@ namespace MapInfoTool.Helpers
             _desiredPos = Vector3.Lerp(_mainCamera.Position, _previousPos, 0.2f);
         }
 
-        public void PointAt(Vector3 lookAt)
-        {
-            _mainCamera.PointAt(lookAt);
-        }
-
         private void RightStickChanged(object sender, AnalogStickChangedEventArgs e)
         {
-            if (_mainCamera.IsInterpolating || !IsActive || DisableControl) return;
+            if (_mainCamera.IsInterpolating || !IsActive || DisableControls) return;
 
             _mainCamera.Rotation += new Vector3(Function.Call<float>(Hash.GET_CONTROL_NORMAL, 2, 221) * -10f, 0,
             Function.Call<float>(Hash.GET_CONTROL_NORMAL, 2, 220) * -11f) * RotationSpeed;
@@ -84,17 +72,26 @@ namespace MapInfoTool.Helpers
 
         private void LeftStickPressed(object sender, ButtonPressedEventArgs e)
         {
-            if (_mainCamera.IsInterpolating || !IsActive || DisableControl) return;
+            if (_mainCamera.IsInterpolating || !IsActive || DisableControls) return;
 
             _previousPos += Direction * Function.Call<float>(Hash.GET_CONTROL_NORMAL, 2, 230) * -5f;
         }
 
         public void EnterCameraView(Vector3 position)
         {
+            EnterCameraView(position, Vector3.Zero);
+        }
+
+        public void EnterCameraView(Vector3 position, Vector3 rotation)
+        {
+            if (_mainCamera == null)
+                _mainCamera = World.CreateCamera(position, rotation, 50f);
+
+             _mainCamera.Position = position;
+
             _desiredPos = position;
-            IsActive = true;
+
             World.RenderingCamera = _mainCamera;
-            _mainCamera.Position = position;
         }
 
         public void ExitCameraView()
@@ -102,8 +99,6 @@ namespace MapInfoTool.Helpers
             Function.Call(Hash.CLEAR_FOCUS);
 
             World.RenderingCamera = null;
-
-            IsActive = false;
         }
 
         public void LookAt(Vector3 position)

@@ -28,8 +28,13 @@ namespace MapInfoTool.Memory
         [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
         private delegate IntPtr GetEntityObbFunc(IntPtr entity, ref CEntityBounds bounds);
 
+        // domain is one of the following
+        // 1 - Assets (filenames)
+        // 2 - Code/ dev strings
+        // 3 - N/A
+        // 4 - Stat strings
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate IntPtr GetConstStringForHashFunc(int unk, uint hashKey);
+        private delegate IntPtr GetConstStringForHashFunc(int domain, uint hashKey);
 
         private const int CBuildingClassSize = 0xD0;
 
@@ -239,7 +244,7 @@ namespace MapInfoTool.Memory
 
             var count = Marshal.ReadInt32(baseAddr + 0x10);
 
-            for (int i = 0; i < count - 1; i++)
+            for (int i = 0; i < count; i++)
             {
                 var currentAddr = itemStart + i * CBuildingClassSize;
 
@@ -247,18 +252,17 @@ namespace MapInfoTool.Memory
 
                 if (drawHandler == IntPtr.Zero && !getNonDrawables) continue;
 
-                var info = new CBuildingWrapped
-                {
-                    Address = currentAddr,
-                    Position = (Vector3) Marshal.PtrToStructure(currentAddr + 0x90, typeof(Vector3)),
-                    Matrix = (CMatrix) Marshal.PtrToStructure(currentAddr + 0x60, typeof(CMatrix)),
-                    ModelName = GetEntityName(currentAddr)
-                };
+                var info = new CBuildingWrapped();
 
-                var modelInfo = Marshal.ReadIntPtr(currentAddr + 0x20);
+                info.Address = currentAddr;
 
-                if (modelInfo != IntPtr.Zero)
-                    info.ModelHash = Marshal.ReadInt32(modelInfo + 0x18);
+                info.Position = (Vector3)Marshal.PtrToStructure(currentAddr + 0x90, typeof(Vector3));
+
+                info.Matrix = (CMatrix)Marshal.PtrToStructure(currentAddr + 0x60, typeof(CMatrix));
+
+                info.ModelName = GetEntityName(currentAddr);
+
+                info.ModelHash = info.ModelName.HashKey();
 
                 yield return info;
             }
@@ -296,12 +300,7 @@ namespace MapInfoTool.Memory
 
                 info.ModelName = GetEntityName(currentAddr);
 
-                var modelInfo = Marshal.ReadIntPtr(currentAddr + 0x20);
-
-                if (modelInfo != IntPtr.Zero)
-                {
-                    info.ModelHash = Marshal.ReadInt32(modelInfo + 0x18);
-                }
+                info.ModelHash = info.ModelName.HashKey();
 
                 yield return info;
             }

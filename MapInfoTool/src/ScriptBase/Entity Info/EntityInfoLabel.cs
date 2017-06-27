@@ -11,6 +11,12 @@ namespace MapInfoTool.ScriptBase.Entity_Info
 
         private readonly UIContainer _container;
 
+        public readonly int Width = 200;
+
+        public readonly int Height = 90;
+
+        public Vector3 DrawPos;
+
         public Color Color {
             get { return _container.Color; }
             set { _container.Color = value; }
@@ -19,7 +25,7 @@ namespace MapInfoTool.ScriptBase.Entity_Info
         public EntityInfoLabel()
         {
             SetupText();
-            _container = new UIContainer(new Point(), new Size(200, 90), Color.FromArgb(158, Color.Black));
+            _container = new UIContainer(new Point(), new Size(Width, Height), Color.FromArgb(158, Color.Black));
             _container.Items.AddRange(_lines);
         }
 
@@ -49,9 +55,9 @@ namespace MapInfoTool.ScriptBase.Entity_Info
 
             _container.Size = new Size((int)(200 * scale), (int)(90 * scale));
 
-            var drawPos = new Vector3(position.X - 0.87f, position.Y, position.Z + 0.4f * stackedIdx);
+            DrawPos = new Vector3(position.X - 0.87f, position.Y, position.Z + 0.37f * stackedIdx);
 
-            Function.Call(Hash.SET_DRAW_ORIGIN, drawPos.X, drawPos.Y, drawPos.Z, 0);
+            Function.Call(Hash.SET_DRAW_ORIGIN, DrawPos.X, DrawPos.Y, DrawPos.Z, 0);
 
             _container.Draw();
 

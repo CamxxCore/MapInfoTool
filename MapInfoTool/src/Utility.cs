@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using GTA;
 
 namespace MapInfoTool
 {
@@ -25,5 +26,11 @@ namespace MapInfoTool
         {
             return s.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
         }
+
+        public static int HashKey(this string text)
+        {
+            return Game.GenerateHash(text);
+        }
+
     }
 }

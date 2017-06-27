@@ -42,9 +42,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ScriptHookVDotNet, Version=2.9.4.0, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Desktop\shvdn\2.9.4\ScriptHookVDotNet.dll</HintPath>
+    <Reference Include="ScriptHookVDotNet">
+      <HintPath>..\..\..\..\..\Desktop\ScriptHookVDotNet.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -68,7 +67,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="src\Math\BoundingBox.cs" />
+    <Compile Include="src\MathStuff\BoundingBox.cs" />
     <Compile Include="src\Config\IniFile.cs" />
     <Compile Include="src\Config\IniHelper.cs" />
     <Compile Include="src\ScriptBase\EntityEditor.cs" />
@@ -82,12 +81,12 @@
     <Compile Include="src\Helpers\FreeCamera.cs" />
     <Compile Include="src\InputHandler.cs" />
     <Compile Include="src\Interfaces\IUpdatable.cs" />
-    <Compile Include="src\Math\MathHelper.cs" />
+    <Compile Include="src\MathStuff\MathHelper.cs" />
     <Compile Include="src\Memory\Pattern.cs" />
     <Compile Include="src\Memory\MemoryAccess.cs" />
     <Compile Include="src\Memory\NativeTypes.cs" />
     <Compile Include="src\Memory\Win32Native.cs" />
-    <Compile Include="src\Math\OrientedBox.cs" />
+    <Compile Include="src\MathStuff\OrientedBox.cs" />
     <Compile Include="src\ScriptBase\ScriptMain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="src\Helpers\FastUIArray.cs" />

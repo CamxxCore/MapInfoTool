@@ -13,6 +13,8 @@ namespace MapInfoTool.ScriptBase.Entity_Info
 
         public sealed override string ModelName => _modelName ?? "Unknown object.";
 
+        public sealed override unsafe IntPtr MemoryAddress => new IntPtr(_prop.MemoryAddress);
+
         public override Vector3 Position
         {
             get
@@ -32,12 +34,7 @@ namespace MapInfoTool.ScriptBase.Entity_Info
 
         public override bool IsOnScreen => _prop.IsOnScreen;
 
-        public sealed override unsafe IntPtr MemoryAddress => new IntPtr(_prop.MemoryAddress);
-
-        /// <summary>
-        /// No choice but to make this unsafe due to shvdn using an unmanaged pointer for the entity base address..
-        /// </summary>
-        public unsafe PropObjectInfo(Prop obj)
+        public PropObjectInfo(Prop obj)
         {
             _prop = obj;
             _modelName = MemoryAccess.GetEntityName(MemoryAddress);

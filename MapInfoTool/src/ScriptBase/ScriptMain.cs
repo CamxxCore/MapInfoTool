@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
@@ -12,6 +13,7 @@ using MapInfoTool.Helpers;
 using MapInfoTool.Memory;
 using MapInfoTool.ScriptBase.Entity_Info;
 using Control = GTA.Control;
+using MessageBox = System.Windows.Forms.MessageBox;
 
 namespace MapInfoTool.ScriptBase
 {
@@ -40,19 +42,32 @@ namespace MapInfoTool.ScriptBase
 
         private bool _consoleActive;
 
-        private readonly bool _capsLock = false;
-
         public ScriptMain()
         {
             AddCommands();
-            MemoryAccess.MainInit();
-            KeyDown += KeyPressed;
-            Tick += OnTick;
             UserConfig.LoadValues();
+            MemoryAccess.MainInit();
+            KeyDown += OnKeyDown;         
+            Tick += OnTick;        
         }
 
         private void AddCommands()
         {
+            _commands.Add("dumpobjects", delegate
+            {
+                using (var writer = new StreamWriter("nearbyobjects.txt"))
+                {
+                    foreach (var obj in _visibleObjects)
+                    {
+                        writer.WriteLine( $"name: {obj.ModelName} position: {obj.Position} rotation: {obj.Rotation} (dist={obj.Position.DistanceTo(_camera.Position)})");
+                    }
+                }
+
+                UI.Notify("Dumped to " + Directory.GetCurrentDirectory() + @"\nearbyobjects.txt");
+
+                return "success";
+            });
+
             _commands.Add("showtextures", delegate
             {
                 if (_targetObject == null) return "Error: an object must first be selected.";
@@ -61,7 +76,7 @@ namespace MapInfoTool.ScriptBase
 
                 foreach (var tx in MemoryAccess.GetEntityTextureNames(_targetObject.MemoryAddress))
                 {
-                    _output.AddLine($"Texture {index + 1}: {tx}");
+                    _output.WriteLine($"~r~{tx}");
 
                     index++;
                 }
@@ -78,28 +93,32 @@ namespace MapInfoTool.ScriptBase
 
             _commands.Add("?", delegate
             {
-                _output.AddLine("---------- Available commands --------------");
+                _output.WriteLine("---------- Available commands --------------");
 
-                _output.AddLine("reloadconfig -> Reloads values in the config file.");
+                _output.WriteLine("reloadconfig -> Reloads values in the config file.");
 
-                _output.AddLine("showtextures -> Show texture names for the selected object.");
+                _output.WriteLine("showtextures -> Show texture names for the selected object.");
+
+                _output.WriteLine("dumpobjects -> Dumps nearby objects to nearbyobjects.txt.");
 
                 return string.Empty;
             });
 
             _commands.Add("help", delegate
             {
-                _output.AddLine("---------- Available commands --------------");
+                _output.WriteLine("---------- Available commands --------------");
 
-                _output.AddLine("reloadconfig -> Reloads values in the config file.");
+                _output.WriteLine("reloadconfig -> Reloads values in the config file.");
 
-                _output.AddLine("showtextures -> Show texture names for the selected object.");
+                _output.WriteLine("showtextures -> Show texture names for the selected object.");
+
+                _output.WriteLine("dumpobjects -> Dumps nearby objects to nearbyobjects.txt.");
 
                 return string.Empty;
             });
         }
 
-        private void KeyPressed(object sender, KeyEventArgs e)
+        private void OnKeyDown(object sender, KeyEventArgs e)
         {
             if (_consoleActive)
             {
@@ -121,7 +140,9 @@ namespace MapInfoTool.ScriptBase
 
             else if (e.KeyCode == UserConfig.ActivationKey)
             {
-                _camera.EnterCameraView(_cameraEnterPos != Vector3.Zero ? _cameraEnterPos : _player.Position);
+                _camera.EnterCameraView(_cameraEnterPos != Vector3.Zero && !UserConfig.StartOnPlayer
+                    ? _cameraEnterPos
+                    : _player.Position + new Vector3(0, 0, 2.0f));
             }
         }
 
@@ -131,53 +152,22 @@ namespace MapInfoTool.ScriptBase
         /// <param name="e"></param>
         private void GetConsoleInput(KeyEventArgs e)
         {
-            var key = System.Windows.Input.KeyInterop.KeyFromVirtualKey((int)e.KeyCode);
+            var keyChar = KeyInterop.GetCharFromKey(e.KeyCode, (e.Modifiers & Keys.Shift) != 0);
 
-            var keyChar = KeyInterop.GetCharFromKey(key, e.Shift);
+            var capsLock = System.Windows.Forms.Control.IsKeyLocked(Keys.CapsLock);
 
-            if ((e.Modifiers & Keys.Shift) != 0)
+            if (char.IsLetter(keyChar))
             {
-                switch (keyChar)
-                {
-                    case ',': keyChar = '<'; break;
-                    case '.': keyChar = '>'; break;
-                    case '/': keyChar = '?'; break;
-                    case ';': keyChar = ':'; break;
-                    case '\'': keyChar = '"'; break;
-                    case '\\': keyChar = '|'; break;
-                    case '[': keyChar = '{'; break;
-                    case ']': keyChar = '}'; break;
-                    case '1': keyChar = '!'; break;
-                    case '2': keyChar = '@'; break;
-                    case '3': keyChar = '#'; break;
-                    case '4': keyChar = '$'; break;
-                    case '5': keyChar = '%'; break;
-                    case '6': keyChar = '^'; break;
-                    case '7': keyChar = '&'; break;
-                    case '8': keyChar = '*'; break;
-                    case '9': keyChar = '('; break;
-                    case '0': keyChar = ')'; break;
-                    case '-': keyChar = '_'; break;
-                    case '=': keyChar = '+'; break;
-                    case '`': keyChar = '~'; break;
-                    default: keyChar = char.ToUpper(keyChar); break;
-                }
-            }
-
-            else if (char.IsLetterOrDigit(keyChar))
-            {
-                if (_capsLock)
+                if (capsLock || e.Shift)
                     keyChar = char.ToUpper(keyChar);
+                else keyChar = char.ToLower(keyChar);
+
             }
 
             else
             {
                 switch (e.KeyCode)
                 {
-                    case Keys.Space:
-                        _input.AddChar(' ');
-                        return;
-
                     case Keys.Back:
                         if (_input.GetText().Length < 1)
                         {
@@ -191,10 +181,18 @@ namespace MapInfoTool.ScriptBase
 
                         return;
 
+                    case Keys.Up:
+                        _output.ScrollUp();
+                        return;
+
+                    case Keys.Down:
+                        _output.ScrollDown();
+                        return;
+
                     case Keys.Enter:
                         var text = _input.GetText();
 
-                        _output.AddLine(text);
+                        _output.WriteLine(text);
 
                         _output.EnableFadeOut();
 
@@ -207,15 +205,11 @@ namespace MapInfoTool.ScriptBase
                         ExecuteCommandString(text);
 
                         return;
-                    default:  return;             
                 }
             }
 
-            if (keyChar != ' ')
-            {
-                _input.AddChar(keyChar);
-            }
-        }   
+            _input.AddChar(keyChar);
+        }
 
         /// <summary>
         /// Execute a console command by its string alias defined in this.commands
@@ -239,9 +233,9 @@ namespace MapInfoTool.ScriptBase
 
             var text = func?.Invoke(args);
 
-            if (text?.Length > 0)
+            if (text.Length > 0)
             {
-                _output.AddLine(text);
+                _output.WriteLine(text);
             }
 
             return true;
@@ -250,13 +244,28 @@ namespace MapInfoTool.ScriptBase
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void UpdateInput()
         {
+            if (_consoleActive)
+            {
+                if (Game.IsControlJustPressed(0, (Control) 241) ||
+                    Game.IsControlJustPressed(0, (Control) 188))
+                {
+                    _output.ScrollUp();
+                }
+
+                else if (Game.IsControlJustPressed(0, (Control) 242) ||
+                         Game.IsControlJustPressed(0, (Control) 187))
+                {
+                    _output.ScrollDown();
+                }
+            }
+
             if (_editor.Active)
             {
                 if (!Game.IsControlJustPressed(0, Control.ScriptRRight)) return;
 
                 _editor.Exit();
 
-                _camera.DisableControl = false;
+                _camera.DisableControls = false;
             }
 
             else if (_camera.IsActive)
@@ -267,7 +276,7 @@ namespace MapInfoTool.ScriptBase
 
                     _editor.Begin(_targetObject);
 
-                    _camera.DisableControl = true;
+                    _camera.DisableControls = true;
                 }
 
                 else if (Game.IsControlJustPressed(0, Control.ScriptRRight))
@@ -284,7 +293,9 @@ namespace MapInfoTool.ScriptBase
                     }
 
                     _camera.ClearLookAt();
+
                     _camera.ExitCameraView();
+
                     _cameraEnterPos = _camera.Position;
 
                     Wait(100);
@@ -305,45 +316,42 @@ namespace MapInfoTool.ScriptBase
             {
                 if (_visibleObjects[i] == null || !_visibleObjects[i].IsOnScreen) continue;
 
-                var cullEnt = false;
+                _visibleObjects[i].DrawOffset = Vector3.Zero;
+
+                int layerIndex = 0;
 
                 for (int v = i - 1; v > -1; v--)
                 {
-                    if (_visibleObjects[v]?.Position.DistanceTo(_visibleObjects[i].Position) < 1.0f)
-                    {
-                        cullEnt = true;
-                        break;
-                    }
-                }
+                    if (_visibleObjects[v] == null || 
+                        _visibleObjects[v].Position.DistanceTo(_visibleObjects[i].Position) > 1.0f) continue;
 
-                if (cullEnt)
-                {
-                    continue;
+                    layerIndex++;
                 }
 
                 var position = _visibleObjects[i].MidPoint;
 
                 if (UserConfig.DrawAllObjects)
                 {
-                    _visibleObjects[i].Draw(_camera.Position.DistanceTo(position));
+                    _visibleObjects[i].Draw(_camera.Position.DistanceTo(position), layerIndex);
                 }
 
                 var heading = Vector3.Normalize(position - _camera.Position);
 
-                var dot = System.Math.Abs(Vector3.Dot(heading, _camera.Direction) - 2f);
+                var dot = Math.Abs(Vector3.Dot(heading, _camera.Direction) - 2f);
 
                 if (dot > closest) continue;
 
                 closest = dot;
+
                 _targetObject = _visibleObjects[i];
             }
         }
 
         private void OnTick(object sender, EventArgs e)
         {
-            var gameTime = Game.GameTime;
-
             if (!_camera.IsActive) return;
+
+            var gameTime = Game.GameTime;
 
             Function.Call(Hash.SET_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0.0f);
 
@@ -422,16 +430,20 @@ namespace MapInfoTool.ScriptBase
         private void CollectNearbyBuildings()
         {
             var count = 0;
-            foreach (var building in MemoryAccess.GetCBuildings(_camera.Position, UserConfig.BuildingSearchRadius).OrderBy(x => x.Position.DistanceTo(_camera.Position)))
+
+            foreach (var building in MemoryAccess.GetCBuildings(_camera.Position, UserConfig.BuildingSearchRadius)
+                .OrderBy(x => x.Position.DistanceTo(_camera.Position)))
             {
-                if (count > System.Math.Min(49, UserConfig.MaxBuildingsOnScreen)) break;
+                if (count > Math.Min(49, UserConfig.MaxBuildingsOnScreen)) break;
+
+                if (!UserConfig.ShowLODs && building.ModelName.Contains("_slod")) continue;
 
                 _visibleObjects[count++] = new BuildingObjectInfo(building);
 
                 if (UserConfig.ShowNearbyList && count < FastUiArray.NumTextLines)
                 {
-                    _uiList.SetText(count, building.ModelName, 
-                        string.Format("{0:0.###}", building.Position.DistanceTo(_camera.Position)));
+                    _uiList.SetText(count, building.ModelName,
+                        $"{building.Position.DistanceTo(_camera.Position):0.###}");
                 }
             }
         }
@@ -440,7 +452,12 @@ namespace MapInfoTool.ScriptBase
         {
             if (_camera.IsActive)
                 _camera.ExitCameraView();
+
             _camera.Dispose();
+
+            // call this anyway since any other scripts using cameras are likely being disposed as well.
+            Function.Call(Hash.DESTROY_ALL_CAMS, false); 
+
             base.Dispose(A_0);
         }
     }
