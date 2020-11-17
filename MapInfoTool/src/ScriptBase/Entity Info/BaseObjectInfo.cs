@@ -85,7 +85,7 @@ namespace MapInfoTool.ScriptBase.Entity_Info
         {
             get
             {
-                var screenPos = UI.WorldToScreen(MidPoint);
+                var screenPos = Utility.WorldToScreen(MidPoint);
                 return screenPos.X != 0 && screenPos.Y != 0;
             }
         }
