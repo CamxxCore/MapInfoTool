@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Reflection;
 using GTA;
+using GTA.Math;
+using GTA.Native;
 
 namespace MapInfoTool
 {
@@ -32,5 +34,12 @@ namespace MapInfoTool
             return Game.GenerateHash(text);
         }
 
+        public static Vector2 WorldToScreen(Vector3 pos)
+        {
+            var x2dp = new OutputArgument();
+            var y2dp = new OutputArgument();
+            Function.Call<bool>(Hash._WORLD3D_TO_SCREEN2D, pos.X, pos.Y, pos.Z, x2dp, y2dp);
+            return new Vector2(x2dp.GetResult<float>(), y2dp.GetResult<float>());
+        }
     }
 }
